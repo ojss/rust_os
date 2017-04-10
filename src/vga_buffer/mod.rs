@@ -1,4 +1,7 @@
 use core::ptr::Unique;
+use core::fmt;
+use core::fmt::Write;
+use spin::Mutex;
 use volatile::Volatile;
 
 #[allow(dead_code)]
@@ -83,12 +86,34 @@ impl Writer {
         }
     }
 
-    fn new_line(&mut self) {}
+    fn new_line(&mut self) {
+        for row in 1..BUFFER_HEIGHT {
+            for col in 0..BUFFER_WIDTH {
+                let buffer = self.buffer();
+                let character = buffer.chars[row][col].read();
+                buffer.chars[row - 1][col].write(character);
+            }
+        }
+    }
 
-    pub fn write_str(&mut self, string: &str) {
-        for byte in string.bytes() {
+    pub fn clear_row(&mut self, row: usize) {
+        let blank = ScreenChar {
+            ascii_character: b' ',
+            color_code: self.color_code
+        };
+
+        for col in 0..BUFFER_WIDTH {
+            self.buffer().chars[row][col].write(blank);
+        }
+    }
+}
+
+impl Write for Writer {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        for byte in s.bytes() {
             self.write_byte(byte)
         }
+        Ok(())
     }
 }
 
@@ -99,5 +124,12 @@ pub fn print_something() {
         buffer: unsafe { Unique::new(0xb8000 as *mut _) },
     };
 
-    writer.write_str("Ojas Shirekar")
+    writer.write_str("Ojas Shirekar");
+    write!(writer, "Born on 3/3/1996");
 }
+
+pub static WRITER: Mutex<Writer> = Mutex::new(Writer {
+    column_position: 0,
+    color_code: ColorCode::new(Color::White, Color::Black),
+    buffer: unsafe { Unique::new(0xb8000 as *mut _) }
+});
