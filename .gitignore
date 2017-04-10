@@ -4,3 +4,5 @@
 /multiboot_header.o
 /isofiles
 /os.iso
+/target
+Cargo.lock
