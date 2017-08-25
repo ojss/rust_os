@@ -8,10 +8,16 @@ assembly_object_files=target/multiboot_header.o target/boot.o target/long_mode_s
 static_libs=target/x86_64-unknown-intermezzos-gnu/release/libintermezzos.a
 linker_script=src/asm/linker.ld
 
-
+UNAME_S := $(shell uname -s)
 arch=x86_64
 target ?= $(arch)-unknown-linux-gnu
 intermezzos := target/$(target)/debug
+
+ifeq ($(UNAME_S),Darwin)
+	LD=x86_64-pc-elf-ld
+else
+	LD=ld
+endif
 
 default: build
 
@@ -32,7 +38,7 @@ target/long_mode_start.o: $(long_mode_start_asm)
 	nasm -f elf64 $(long_mode_start_asm) -o target/long_mode_start.o
 
 target/kernel.bin: $(assembly_object_files) $(linker_script) cargo
-	x86_64-pc-elf-ld -n -o target/kernel.bin -gc-sections -T $(linker_script) $(assembly_object_files) $(static_libs)
+	$(LD) -n -o target/kernel.bin -gc-sections -T $(linker_script) $(assembly_object_files) $(static_libs)
 
 target/os.iso: target/kernel.bin $(grub_cfg)
 	mkdir -p target/isofiles/boot/grub

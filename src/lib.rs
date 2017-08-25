@@ -1,6 +1,7 @@
 #![feature(lang_items)]
 #![feature(const_fn)]
 #![feature(unique)]
+#![feature(core_str_ext)]
 #![no_std]
 extern crate volatile;
 extern crate rlibc;
